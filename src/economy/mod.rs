@@ -8,6 +8,9 @@ pub mod economy {
         let users = fetch_old_users(&old_economy).await?;
         create_new_table(&new_economy).await?;
         for mut user in users {
+            if user.balance < 300 {
+                user.balance = 300; // legacy bonus ^.^
+            }
             add_new_user(&new_economy, user).await?;
         }
         old_economy.close().expect("Failed to close database");
