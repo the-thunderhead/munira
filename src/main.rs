@@ -1,15 +1,18 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use chrono::{DateTime, NaiveDateTime, ParseResult, Utc};
-use rusqlite::{Connection, Result, named_params};
+use chrono::DateTime;
+use rusqlite::{Connection, Result};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     println!("Runs...");
-    let conn =  Connection::open("./database.sqlite")?;
-    let users = fetch_users(&conn).await.expect("TODO: panic message");
+    let old_economy =  Connection::open("./database.sqlite")?;
+    let new_economy =  Connection::open("./economy.db")?;
+    let users = fetch_users(&old_economy).await?;
+    create_new_table(&new_economy).await?;
     for user in users {
-        println!("{}", user.created)
+        add_user(&new_economy, user).await?;
     }
+    old_economy.close().expect("Failed to close database");
+    new_economy.close().expect("Failed to close database");
     Ok(())
 }
 
@@ -45,13 +48,13 @@ pub async fn add_user(db: &Connection, user: User) -> Result<usize> {
                 0,
                 0,
                 ?3,
-                ?3
+                ?4
             )",
         (
             user.id,
             user.balance,
             user.created,
-            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u32 // breaks in around a hundred years
+            user.updated,
         )
     )
 }

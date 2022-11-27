@@ -1,4 +1,5 @@
 /target
 /.idea
-database.sqlite
-economy.db
+*.sqlite
+*.db
+*.db-journal
